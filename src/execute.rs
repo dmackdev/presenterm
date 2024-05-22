@@ -102,13 +102,11 @@ impl ProcessReader {
         let stderr = self.handle.stderr.take().expect("no stderr");
         let stderr = BufReader::new(stderr);
         let _ = Self::process_output(self.state.clone(), stdout, stderr);
-        let success = match self.handle.try_wait() {
-            Ok(Some(code)) => code.success(),
-            _ => false,
-        };
+        let success = self.handle.try_wait().ok().flatten().map(|s| s.success());
         let status = match success {
-            true => ProcessStatus::Success,
-            false => ProcessStatus::Failure,
+            Some(true) => ProcessStatus::Success,
+            Some(false) => ProcessStatus::Failure,
+            None => ProcessStatus::Running,
         };
         self.state.lock().unwrap().status = status;
     }
