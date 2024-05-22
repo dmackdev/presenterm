@@ -180,6 +180,33 @@ echo 'bye'"
 
         let expected_lines = vec!["hello world", "bye"];
         assert_eq!(state.output, expected_lines);
+        assert!(state.error_output.is_empty());
+    }
+
+    #[test]
+    fn shell_code_execution_captures_stderr() {
+        let contents = r"
+echo 'This message redirects to stderr' >&2
+echo 'hello world'
+man
+"
+        .into();
+        let code = Code {
+            contents,
+            language: CodeLanguage::Shell("sh".into()),
+            attributes: CodeAttributes { execute: true, ..Default::default() },
+        };
+        let handle = CodeExecuter::execute(&code).expect("execution failed");
+        let state = loop {
+            let state = handle.state();
+            if state.status.is_finished() {
+                break state;
+            }
+        };
+
+        assert_eq!(state.output, vec!["hello world"]);
+        let expected_error_lines = vec!["This message redirects to stderr", "What manual page do you want?"];
+        assert_eq!(state.error_output, expected_error_lines);
     }
 
     #[test]
