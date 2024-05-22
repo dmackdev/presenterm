@@ -3,9 +3,9 @@
 use crate::markdown::elements::{Code, CodeLanguage};
 use std::{
     io::{self, BufRead, BufReader, Write},
-    process::{self, ChildStdout, Stdio},
+    process::{self, ChildStderr, ChildStdout, Stdio},
     sync::{Arc, Mutex},
-    thread::{self},
+    thread,
 };
 use tempfile::NamedTempFile;
 
@@ -36,7 +36,7 @@ impl CodeExecuter {
             .arg(output_file.path())
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
+            .stderr(Stdio::piped())
             .spawn()
             .map_err(CodeExecuteError::SpawnProcess)?;
 
@@ -99,7 +99,9 @@ impl ProcessReader {
     fn run(mut self) {
         let stdout = self.handle.stdout.take().expect("no stdout");
         let stdout = BufReader::new(stdout);
-        let _ = Self::process_output(self.state.clone(), stdout);
+        let stderr = self.handle.stderr.take().expect("no stderr");
+        let stderr = BufReader::new(stderr);
+        let _ = Self::process_output(self.state.clone(), stdout, stderr);
         let success = match self.handle.try_wait() {
             Ok(Some(code)) => code.success(),
             _ => false,
@@ -111,11 +113,20 @@ impl ProcessReader {
         self.state.lock().unwrap().status = status;
     }
 
-    fn process_output(state: Arc<Mutex<ExecutionState>>, stdout: BufReader<ChildStdout>) -> io::Result<()> {
+    fn process_output(
+        state: Arc<Mutex<ExecutionState>>,
+        stdout: BufReader<ChildStdout>,
+        stderr: BufReader<ChildStderr>,
+    ) -> io::Result<()> {
         for line in stdout.lines() {
             let line = line?;
             // TODO: consider not locking per line...
             state.lock().unwrap().output.push(line);
+        }
+        for line in stderr.lines() {
+            let line = line?;
+            // TODO: consider not locking per line...
+            state.lock().unwrap().error_output.push(line);
         }
         Ok(())
     }
@@ -125,6 +136,7 @@ impl ProcessReader {
 #[derive(Clone, Default, Debug)]
 pub(crate) struct ExecutionState {
     pub(crate) output: Vec<String>,
+    pub(crate) error_output: Vec<String>,
     pub(crate) status: ProcessStatus,
 }
 

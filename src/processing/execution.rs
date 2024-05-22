@@ -1,5 +1,5 @@
 use crate::{
-    execute::{CodeExecuter, ExecutionHandle, ExecutionState, ProcessStatus},
+    execute::{CodeExecuter, ExecutionHandle, ExecutionState},
     markdown::elements::Code,
     presentation::{AsRenderOperations, PreformattedLine, RenderOnDemand, RenderOnDemandState, RenderOperation},
     render::properties::WindowSize,
@@ -87,14 +87,15 @@ impl RenderOnDemand for RunCodeOperation {
         let mut inner = self.inner.borrow_mut();
         if let Some(handle) = inner.handle.as_mut() {
             let state = handle.state();
-            let ExecutionState { output, status } = state;
+            let ExecutionState { output, error_output, status } = state;
             if status.is_finished() {
                 inner.handle.take();
                 inner.state = RenderOnDemandState::Rendered;
             }
             inner.output_lines = output;
-            if matches!(status, ProcessStatus::Failure) {
-                inner.output_lines.push("[finished with error]".to_string());
+            if !error_output.is_empty() {
+                inner.output_lines.push("stderr:".to_string());
+                inner.output_lines.append(&mut error_output.clone())
             }
         }
         inner.state.clone()
