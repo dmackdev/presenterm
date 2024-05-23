@@ -1,5 +1,5 @@
 use crate::{
-    custom::OptionsConfig,
+    custom::{EvaluatorConfig, OptionsConfig},
     markdown::text::WeightedTextBlock,
     media::image::Image,
     render::properties::WindowSize,
@@ -435,6 +435,9 @@ pub(crate) struct PresentationMetadata {
     /// The presentation's options.
     #[serde(default)]
     pub(crate) options: Option<OptionsConfig>,
+
+    #[serde(default)]
+    pub(crate) evaluators: Vec<EvaluatorConfig>,
 }
 
 /// A presentation's theme metadata.

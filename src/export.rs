@@ -16,8 +16,8 @@ use image::{codecs::png::PngEncoder, DynamicImage, ImageEncoder, ImageError};
 use semver::Version;
 use serde::Serialize;
 use std::{
-    env, fs,
-    io::{self},
+    collections::HashMap,
+    env, fs, io,
     path::{Path, PathBuf},
 };
 
@@ -72,7 +72,11 @@ impl<'a> Exporter<'a> {
             Err(e) => return Err(e.into()),
         };
         let version = Version::parse(version.trim()).map_err(|_| ExportError::MinimumVersion)?;
-        if version >= MINIMUM_EXPORTER_VERSION { Ok(()) } else { Err(ExportError::MinimumVersion) }
+        if version >= MINIMUM_EXPORTER_VERSION {
+            Ok(())
+        } else {
+            Err(ExportError::MinimumVersion)
+        }
     }
 
     /// Extract the metadata necessary to make an export.
@@ -87,6 +91,7 @@ impl<'a> Exporter<'a> {
             Default::default(),
             KeyBindingsConfig::default(),
             self.options.clone(),
+            HashMap::new(),
         )
         .build(elements)?;
 

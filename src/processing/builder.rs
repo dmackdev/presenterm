@@ -1,5 +1,5 @@
 use crate::{
-    custom::{KeyBindingsConfig, OptionsConfig},
+    custom::{EvaluatorConfig, KeyBindingsConfig, OptionsConfig},
     markdown::{
         elements::{
             Code, CodeLanguage, Highlight, HighlightGroup, ListItem, ListItemType, MarkdownElement, ParagraphElement,
@@ -29,7 +29,9 @@ use crate::{
 };
 use image::DynamicImage;
 use serde::Deserialize;
-use std::{borrow::Cow, cell::RefCell, fmt::Display, iter, mem, path::PathBuf, rc::Rc, str::FromStr};
+use std::{
+    borrow::Cow, cell::RefCell, collections::HashMap, fmt::Display, iter, mem, path::PathBuf, rc::Rc, str::FromStr,
+};
 use unicode_width::UnicodeWidthStr;
 
 use super::modals::KeyBindingsModalBuilder;
@@ -104,6 +106,7 @@ pub(crate) struct PresentationBuilder<'a> {
     image_registry: ImageRegistry,
     bindings_config: KeyBindingsConfig,
     options: PresentationBuilderOptions,
+    evaluators: HashMap<String, Vec<String>>,
 }
 
 impl<'a> PresentationBuilder<'a> {
@@ -117,6 +120,7 @@ impl<'a> PresentationBuilder<'a> {
         image_registry: ImageRegistry,
         bindings_config: KeyBindingsConfig,
         options: PresentationBuilderOptions,
+        evaluators: HashMap<String, Vec<String>>,
     ) -> Self {
         Self {
             slide_chunks: Vec::new(),
@@ -134,6 +138,7 @@ impl<'a> PresentationBuilder<'a> {
             image_registry,
             bindings_config,
             options,
+            evaluators,
         }
     }
 
@@ -215,7 +220,11 @@ impl<'a> PresentationBuilder<'a> {
         }
         self.slide_state.needs_enter_column = false;
         let last_valid = matches!(last, RenderOperation::EnterColumn { .. } | RenderOperation::ExitLayout);
-        if last_valid { Ok(()) } else { Err(BuildError::NotInsideColumn) }
+        if last_valid {
+            Ok(())
+        } else {
+            Err(BuildError::NotInsideColumn)
+        }
     }
 
     fn push_slide_prelude(&mut self) {
@@ -269,6 +278,11 @@ impl<'a> PresentationBuilder<'a> {
         }
         self.footer_context.borrow_mut().author = metadata.author.clone().unwrap_or_default();
         self.set_theme(&metadata.theme)?;
+
+        for evaluator in &metadata.evaluators {
+            self.evaluators.insert(evaluator.id.clone(), evaluator.args.clone());
+        }
+
         if metadata.title.is_some()
             || metadata.sub_title.is_some()
             || metadata.author.is_some()
@@ -277,6 +291,7 @@ impl<'a> PresentationBuilder<'a> {
             self.push_slide_prelude();
             self.push_intro_slide(metadata);
         }
+
         Ok(())
     }
 
@@ -679,7 +694,7 @@ impl<'a> PresentationBuilder<'a> {
         if self.options.allow_mutations && context.borrow().groups.len() > 1 {
             self.chunk_mutators.push(Box::new(HighlightMutator::new(context)));
         }
-        if code.attributes.execute {
+        if code.attributes.evaluator_id.is_some() {
             self.push_code_execution(code);
         }
         Ok(())
@@ -733,6 +748,7 @@ impl<'a> PresentationBuilder<'a> {
             code,
             self.theme.default_style.colors.clone(),
             self.theme.execution_output.colors.clone(),
+            self.evaluators.clone(),
         );
         let operation = RenderOperation::RenderOnDemand(Rc::new(operation));
         self.chunk_operations.push(operation);
@@ -1014,12 +1030,15 @@ struct StrictPresentationMetadata {
 
     #[serde(default)]
     options: Option<OptionsConfig>,
+
+    #[serde(default)]
+    evaluators: Vec<EvaluatorConfig>,
 }
 
 impl From<StrictPresentationMetadata> for PresentationMetadata {
     fn from(strict: StrictPresentationMetadata) -> Self {
-        let StrictPresentationMetadata { title, sub_title, author, authors, theme, options } = strict;
-        Self { title, sub_title, author, authors, theme, options }
+        let StrictPresentationMetadata { title, sub_title, author, authors, theme, options, evaluators } = strict;
+        Self { title, sub_title, author, authors, theme, options, evaluators }
     }
 }
 
@@ -1060,6 +1079,7 @@ mod test {
             Default::default(),
             bindings,
             options,
+            HashMap::new(),
         );
         builder.build(elements)
     }

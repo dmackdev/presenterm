@@ -17,7 +17,7 @@ use crate::{
     typst::TypstRender,
 };
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fmt::Display,
     fs,
     io::{self, Stdout},
@@ -140,7 +140,11 @@ impl<'a> Presenter<'a> {
         };
         // If the screen is too small, simply ignore this. Eventually the user will resize the
         // screen.
-        if matches!(result, Err(RenderError::TerminalTooSmall)) { Ok(()) } else { result }
+        if matches!(result, Err(RenderError::TerminalTooSmall)) {
+            Ok(())
+        } else {
+            result
+        }
     }
 
     fn apply_command(&mut self, command: Command) -> CommandSideEffect {
@@ -207,7 +211,11 @@ impl<'a> Presenter<'a> {
                 panic!("unreachable commands")
             }
         };
-        if needs_redraw { CommandSideEffect::Redraw } else { CommandSideEffect::None }
+        if needs_redraw {
+            CommandSideEffect::Redraw
+        } else {
+            CommandSideEffect::None
+        }
     }
 
     fn try_reload(&mut self, path: &Path, force: bool) {
@@ -261,6 +269,7 @@ impl<'a> Presenter<'a> {
             ImageRegistry(self.image_printer.clone()),
             self.options.bindings.clone(),
             self.options.builder_options.clone(),
+            HashMap::new(),
         )
         .build(elements)?;
         if export_mode {

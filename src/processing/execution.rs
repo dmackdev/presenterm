@@ -6,7 +6,7 @@ use crate::{
     style::Colors,
 };
 use itertools::Itertools;
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use super::separator::RenderSeparator;
 
@@ -23,13 +23,19 @@ pub(crate) struct RunCodeOperation {
     default_colors: Colors,
     block_colors: Colors,
     inner: Rc<RefCell<RunCodeOperationInner>>,
+    evaluators: HashMap<String, Vec<String>>,
 }
 
 impl RunCodeOperation {
-    pub(crate) fn new(code: Code, default_colors: Colors, block_colors: Colors) -> Self {
+    pub(crate) fn new(
+        code: Code,
+        default_colors: Colors,
+        block_colors: Colors,
+        evaluators: HashMap<String, Vec<String>>,
+    ) -> Self {
         let inner =
             RunCodeOperationInner { handle: None, output_lines: Vec::new(), state: RenderOnDemandState::default() };
-        Self { code, default_colors, block_colors, inner: Rc::new(RefCell::new(inner)) }
+        Self { code, default_colors, block_colors, inner: Rc::new(RefCell::new(inner)), evaluators }
     }
 
     fn render_line(&self, mut line: String) -> RenderOperation {
@@ -106,7 +112,7 @@ impl RenderOnDemand for RunCodeOperation {
         if !matches!(inner.state, RenderOnDemandState::NotStarted) {
             return false;
         }
-        match CodeExecuter::execute(&self.code) {
+        match CodeExecuter::execute(&self.code, &self.evaluators) {
             Ok(handle) => {
                 inner.handle = Some(handle);
                 inner.state = RenderOnDemandState::Rendering;

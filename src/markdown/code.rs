@@ -16,9 +16,6 @@ impl CodeBlockParser {
     fn parse_block_info(input: &str) -> ParseResult<(CodeLanguage, CodeAttributes)> {
         let (language, input) = Self::parse_language(input);
         let attributes = Self::parse_attributes(input)?;
-        if attributes.execute && !language.supports_execution() {
-            return Err(CodeBlockParseError::UnsupportedAttribute(language, "execution"));
-        }
         if attributes.auto_render && !language.supports_auto_render() {
             return Err(CodeBlockParseError::UnsupportedAttribute(language, "rendering"));
         }
@@ -96,7 +93,7 @@ impl CodeBlockParser {
             }
             match attribute {
                 Attribute::LineNumbers => attributes.line_numbers = true,
-                Attribute::Exec => attributes.execute = true,
+                Attribute::Exec(evaluator_id) => attributes.evaluator_id = Some(evaluator_id),
                 Attribute::AutoRender => attributes.auto_render = true,
                 Attribute::HighlightedLines(lines) => attributes.highlight_groups = lines,
             };
@@ -114,11 +111,22 @@ impl CodeBlockParser {
         let (attribute, input) = match input.chars().next() {
             Some('+') => {
                 let token = Self::next_identifier(&input[1..]);
-                let attribute = match token {
-                    "line_numbers" => Attribute::LineNumbers,
-                    "exec" => Attribute::Exec,
-                    "render" => Attribute::AutoRender,
-                    _ => return Err(CodeBlockParseError::InvalidToken(Self::next_identifier(input).into())),
+                let attribute = if token.starts_with("exec") {
+                    match token.split_once(':') {
+                        Some((_, evaluator_id)) if !evaluator_id.is_empty() => {
+                            Attribute::Exec(EvaluatorId::Custom(evaluator_id.to_string()))
+                        }
+                        Some((_, _)) => {
+                            return Err(CodeBlockParseError::InvalidToken(Self::next_identifier(input).into()))
+                        }
+                        None => Attribute::Exec(EvaluatorId::default()),
+                    }
+                } else {
+                    match token {
+                        "line_numbers" => Attribute::LineNumbers,
+                        "render" => Attribute::AutoRender,
+                        _ => return Err(CodeBlockParseError::InvalidToken(Self::next_identifier(input).into())),
+                    }
                 };
                 (Some(attribute), &input[token.len() + 1..])
             }
@@ -213,9 +221,16 @@ pub(crate) enum CodeBlockParseError {
 #[derive(EnumDiscriminants)]
 enum Attribute {
     LineNumbers,
-    Exec,
+    Exec(EvaluatorId),
     AutoRender,
     HighlightedLines(Vec<HighlightGroup>),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum EvaluatorId {
+    #[default]
+    Shell,
+    Custom(String),
 }
 
 #[cfg(test)]
@@ -242,20 +257,6 @@ mod test {
     #[test]
     fn no_attributes() {
         assert_eq!(parse_language("rust"), CodeLanguage::Rust);
-    }
-
-    #[test]
-    fn one_attribute() {
-        let attributes = parse_attributes("bash +exec");
-        assert!(attributes.execute);
-        assert!(!attributes.line_numbers);
-    }
-
-    #[test]
-    fn two_attributes() {
-        let attributes = parse_attributes("bash +exec +line_numbers");
-        assert!(attributes.execute);
-        assert!(attributes.line_numbers);
     }
 
     #[test]

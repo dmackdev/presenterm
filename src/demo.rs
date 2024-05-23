@@ -9,7 +9,7 @@ use crate::{
     render::{draw::TerminalDrawer, terminal::TerminalWrite},
     ImageRegistry, MarkdownParser, PresentationBuilderOptions, PresentationTheme, Resources, Themes, TypstRender,
 };
-use std::io;
+use std::{collections::HashMap, io};
 
 const PRESENTATION: &str = r#"
 # Header 1
@@ -110,6 +110,7 @@ impl<W: TerminalWrite> ThemesDemo<W> {
             image_registry,
             bindings_config,
             options,
+            HashMap::new(),
         );
         let mut elements = vec![MarkdownElement::SetexHeading { text: format!("theme: {theme_name}").into() }];
         elements.extend(base_elements.iter().cloned());

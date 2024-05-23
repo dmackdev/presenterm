@@ -326,6 +326,12 @@ fn default_exit_bindings() -> Vec<KeyBinding> {
     make_keybindings(["<c-c>"])
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct EvaluatorConfig {
+    pub id: String,
+    pub args: Vec<String>,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

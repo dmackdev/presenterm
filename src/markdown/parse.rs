@@ -643,7 +643,6 @@ let q = 42;
         let MarkdownElement::Code(code) = parsed else { panic!("not a code block: {parsed:?}") };
         assert_eq!(code.language, CodeLanguage::Rust);
         assert_eq!(code.contents, "let q = 42;\n");
-        assert!(!code.attributes.execute);
     }
 
     #[test]
@@ -657,7 +656,6 @@ echo hi mom
         );
         let MarkdownElement::Code(code) = parsed else { panic!("not a code block: {parsed:?}") };
         assert_eq!(code.language, CodeLanguage::Shell("bash".into()));
-        assert!(code.attributes.execute);
     }
 
     #[test]

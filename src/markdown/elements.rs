@@ -3,6 +3,8 @@ use std::{iter, ops::Range, path::PathBuf};
 use strum::EnumIter;
 use unicode_width::UnicodeWidthStr;
 
+use super::code::EvaluatorId;
+
 /// A markdown element.
 ///
 /// This represents each of the supported markdown elements. The structure here differs a bit from
@@ -244,10 +246,6 @@ pub(crate) enum CodeLanguage {
 }
 
 impl CodeLanguage {
-    pub(crate) fn supports_execution(&self) -> bool {
-        matches!(self, Self::Shell(_))
-    }
-
     pub(crate) fn supports_auto_render(&self) -> bool {
         matches!(self, Self::Latex | Self::Typst)
     }
@@ -256,9 +254,6 @@ impl CodeLanguage {
 /// Attributes for code blocks.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct CodeAttributes {
-    /// Whether the code block is marked as executable.
-    pub(crate) execute: bool,
-
     /// Whether a code block is marked to be auto rendered.
     ///
     /// An auto rendered piece of code is transformed during parsing, leading to some visual
@@ -270,6 +265,8 @@ pub(crate) struct CodeAttributes {
 
     /// The groups of lines to highlight.
     pub(crate) highlight_groups: Vec<HighlightGroup>,
+
+    pub(crate) evaluator_id: Option<EvaluatorId>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
