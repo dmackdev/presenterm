@@ -1,9 +1,6 @@
 //! Code execution.
 
-use crate::{
-    markdown::elements::{Code, CodeLanguage},
-    processing::builder::HIDDEN_CODE_LINE_DELIMITER,
-};
+use crate::{markdown::elements::Code, processing::builder::HIDDEN_CODE_LINE_DELIMITER};
 use std::{
     io::{self, BufRead, BufReader, Write},
     process::{self, Stdio},
@@ -18,16 +15,11 @@ pub(crate) struct CodeExecuter;
 impl CodeExecuter {
     /// Execute a piece of code.
     pub(crate) fn execute(code: &Code) -> Result<ExecutionHandle, CodeExecuteError> {
-        if !code.language.supports_execution() {
-            return Err(CodeExecuteError::UnsupportedExecution);
-        }
         if !code.attributes.execute {
             return Err(CodeExecuteError::NotExecutableCode);
         }
-        match &code.language {
-            CodeLanguage::Shell(interpreter) => Self::execute_shell(interpreter, &code.contents),
-            _ => Err(CodeExecuteError::UnsupportedExecution),
-        }
+        // TODO: Need to specify interpreter in the CodeAttributes instead of hardcoding.
+        Self::execute_shell("sh", &code.contents)
     }
 
     fn execute_shell(interpreter: &str, code: &str) -> Result<ExecutionHandle, CodeExecuteError> {
@@ -56,9 +48,6 @@ impl CodeExecuter {
 /// An error during the execution of some code.
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum CodeExecuteError {
-    #[error("code language doesn't support execution")]
-    UnsupportedExecution,
-
     #[error("code is not marked for execution")]
     NotExecutableCode,
 
@@ -157,7 +146,7 @@ impl ProcessStatus {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::markdown::elements::CodeAttributes;
+    use crate::markdown::elements::{CodeAttributes, CodeLanguage};
 
     #[test]
     fn shell_code_execution() {

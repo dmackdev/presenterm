@@ -8,7 +8,7 @@ but will still be executed.
 
 Here is an example for compiling and running a `java` program:
 
-```bash +exec
+```java +exec
 /// cat > HelloWorld.java << EOF
 public class HelloWorld {
     public static void main(String[] args) {
@@ -26,7 +26,7 @@ public class HelloWorld {
 
 You could even omit the enclosing class and method completely:
 
-```bash +exec
+```java +exec
 /// cat > HelloWorld.java << EOF
 /// public class HelloWorld {
 /// public static void main(String[] args) {
@@ -44,7 +44,7 @@ System.out.println("Hello from Java!");
 
 An example for `Rust`:
 
-```bash +exec
+```rust +exec
 /// cat > hello.rs << EOF
 fn main() {
     println!("Hello from Rust!");
@@ -60,7 +60,7 @@ fn main() {
 
 An example for `python`:
 
-```bash +exec
+```python +exec
 /// python -c """
 print('Hello from Python!')
 /// """
