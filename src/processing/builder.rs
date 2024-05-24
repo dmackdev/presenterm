@@ -280,6 +280,9 @@ impl<'a> PresentationBuilder<'a> {
         self.set_theme(&metadata.theme)?;
 
         for evaluator in &metadata.evaluators {
+            if self.evaluators.contains_key(&evaluator.id) {
+                return Err(BuildError::InvalidMetadata(format!("duplicate evaluator identifier: {}", evaluator.id)));
+            }
             self.evaluators.insert(evaluator.id.clone(), evaluator.args.clone());
         }
 
