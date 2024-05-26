@@ -37,7 +37,6 @@ use super::modals::KeyBindingsModalBuilder;
 // TODO: move to a theme config.
 static DEFAULT_BOTTOM_SLIDE_MARGIN: u16 = 3;
 static DEFAULT_Z_INDEX: i32 = -2;
-pub static HIDDEN_CODE_LINE_DELIMITER: &str = "/// ";
 
 #[derive(Default)]
 pub struct Themes {
@@ -718,7 +717,7 @@ impl<'a> PresentationBuilder<'a> {
 
         let mut output = Vec::new();
         let block_style = &self.theme.code;
-        for line in lines.into_iter().filter(|line| !line.code.starts_with(HIDDEN_CODE_LINE_DELIMITER)) {
+        for line in lines.into_iter() {
             let highlighted = line.highlight(&padding_style, &mut code_highlighter, block_style);
             let not_highlighted = line.highlight(&padding_style, &mut empty_highlighter, block_style);
             let width = line.width();

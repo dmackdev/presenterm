@@ -2,48 +2,6 @@
 title: Hidden Code Lines
 ---
 
-You can use the delimiter `"/// "` for lines of shell code
-that will not be visible in the code snippet in the presentation,
-but will still be executed.
-
-Here is an example for compiling and running a `java` program:
-
-```java +exec
-/// cat > HelloWorld.java << EOF
-public class HelloWorld {
-    public static void main(String[] args) {
-        System.out.println("Hello from Java!");
-    }
-}
-/// EOF
-/// javac HelloWorld.java
-/// java HelloWorld
-/// rm HelloWorld.java
-/// rm HelloWorld.class
-```
-
-<!-- end_slide -->
-
-You could even omit the enclosing class and method completely:
-
-```java +exec
-/// cat > HelloWorld.java << EOF
-/// public class HelloWorld {
-/// public static void main(String[] args) {
-System.out.println("Hello from Java!");
-/// }
-/// }
-/// EOF
-/// javac HelloWorld.java
-/// java HelloWorld
-/// rm HelloWorld.java
-/// rm HelloWorld.class
-```
-
-<!-- end_slide -->
-
-An example for `Rust`:
-
 ```rust +exec
 /// cat > hello.rs << EOF
 fn main() {
@@ -58,10 +16,63 @@ fn main() {
 
 <!-- end_slide -->
 
-An example for `python`:
+```rust +line_numbers
+let foo = 2;
+let bar = 2;
+let sum = foo + bar;
+println!("The sum is: {}", sum);
+```
 
-```python +exec
-/// python -c """
-print('Hello from Python!')
-/// """
+```rust +line_numbers
+/// fn main() {
+let foo = 2;
+let bar = 2;
+let sum = foo + bar;
+println!("The sum is: {}", sum);
+/// }
+```
+
+<!-- end_slide -->
+
+```rust {1,3,4,7,9-11} +line_numbers
+   fn potato() -> u32 {
+
+    println!("Hello world");
+    let mut q = 42;
+    q = q * 1337;
+    q = q * 1337;
+    q = q * 1337;
+    q = q * 1337;
+    q = q * 1337;
+    q = q * 1337;
+    q = q * 1337;
+    q = q * 1337;
+   }
+```
+
+```rust {1,3,4,7,9-11} +line_numbers
+///    fn potato() -> u32 {
+println!("Hello world");
+let mut q = 42;
+q = q * 1337;
+q = q * 1337;
+q = q * 1337;
+q = q * 1337;
+q = q * 1337;
+q = q * 1337;
+q = q * 1337;
+q = q * 1337;
+q = q * 1337;
+///    }
+```
+
+<!-- end_slide -->
+
+```rust {1|2|3|4}
+///   fn potato() -> u32 {
+println!("Hello world");
+let mut q = 42;
+q = q * 1337;
+500
+///   }
 ```

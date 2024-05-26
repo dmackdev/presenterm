@@ -1,6 +1,6 @@
 //! Code execution.
 
-use crate::{markdown::elements::Code, processing::builder::HIDDEN_CODE_LINE_DELIMITER};
+use crate::markdown::elements::Code;
 use std::{
     io::{self, BufRead, BufReader, Write},
     process::{self, Stdio},
@@ -19,11 +19,10 @@ impl CodeExecuter {
             return Err(CodeExecuteError::NotExecutableCode);
         }
         // TODO: Need to specify interpreter in the CodeAttributes instead of hardcoding.
-        Self::execute_shell("sh", &code.contents)
+        Self::execute_shell("sh", &code.executable_contents())
     }
 
     fn execute_shell(interpreter: &str, code: &str) -> Result<ExecutionHandle, CodeExecuteError> {
-        let code = code.replace(HIDDEN_CODE_LINE_DELIMITER, "");
         let mut output_file = NamedTempFile::new().map_err(CodeExecuteError::TempFile)?;
         output_file.write_all(code.as_bytes()).map_err(CodeExecuteError::TempFile)?;
         output_file.flush().map_err(CodeExecuteError::TempFile)?;
